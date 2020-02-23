@@ -17,8 +17,7 @@ Gem::Specification.new do |s|
   s.require_paths = ['lib']
 
   s.add_runtime_dependency 'kajiki', '~> 1.1'
-  s.add_runtime_dependency 'thin', '~> 1.6'
-  s.add_runtime_dependency 'sinatra', '~> 1.4'
+  s.add_runtime_dependency 'sinatra', '~> 2.0'
   s.add_runtime_dependency 'tiny_tds', '~> 1.0'
   s.add_runtime_dependency 'sequel', '~> 4.0'
 end
