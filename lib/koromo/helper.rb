@@ -1,9 +1,7 @@
 require 'json'
 
 module Koromo
-
   module Helper
-
     # Convert object into JSON, optionally pretty-format
     # @param obj [Object] any Ruby object
     # @param opts [Hash] any JSON options
@@ -42,13 +40,5 @@ module Koromo
         val
       end
     end
-
-    def valid_token?(token, method = :any)
-      tokens = Koromo.config[:global][:auth_tokens][method]
-      return true if tokens.nil?
-      tokens.include?(token)
-    end
-
   end
-
 end
