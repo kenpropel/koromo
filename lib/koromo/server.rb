@@ -20,8 +20,13 @@ module Koromo
       tokens = Config.shared.auth_tokens
       halt 401 unless (req_auth = request.env['HTTP_AUTHENTICATION'])
       halt 401 unless req_auth[0..6] == 'Bearer '
-      halt 401 unless auth_tokens.keys.include?(req_auth[7..-1])
-      request.env['HTTP_AUTHENTICATION'] 'Bearer <token>'
+      halt 401 unless auth_tokens.has_key?(req_auth[7..-1])
+    end
+
+    post '/query' do
+    end
+
+    post '/preset/:name' do |name|
     end
 
     get '/:resource' do |r|
@@ -68,6 +73,5 @@ module Koromo
       #   body json_with_object(@body_object, {pretty: config[:global][:pretty_json]})
       # end
     end
-
   end
 end
