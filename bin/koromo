@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 require 'kajiki'
-require 'thin'
 require 'koromo'
 
 
@@ -9,8 +8,10 @@ opts = Kajiki.preset_options(:server, {config: true})
 Kajiki.run(opts) do |cmd|
   case cmd
   when 'start'
-    Thin::Server.start(opts[:address], opts[:port]) do
-      run Koromo::Server.new(opts)
-    end
+    Koromo::Config.load_config(opts[:config]) if opts[:config]
+    Koromo::Handler.autoload
+    require 'koromo/server'
+    Koromo.logger.warn('Koromo server starting...')
+    Koromo::Server.run!({bind: opts[:address], port: opts[:port]})
   end
 end

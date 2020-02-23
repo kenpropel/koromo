@@ -1,6 +1,4 @@
 require 'sinatra/base'
-require 'logger'
-require 'koromo/config'
 require 'koromo/helper'
 require 'koromo/sql'
 
