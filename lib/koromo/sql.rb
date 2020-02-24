@@ -1,24 +1,21 @@
-require 'sequel'
-
+require 'tiny_tds'
 
 module Koromo
-
-  def self.sql
-    SQL.shared_instance
-  end
-
   class SQL
-
-    def self.shared_instance
-      @sql ||= SQL.new
-    end
-
-    def setup(conf)
-      @config = conf
+    def initialize(conf)
       # Sequel connection setup
       # Sequel.application_timezone = :local
       # Sequel.database_timezone = :utc
-      Sequel::Model.db = Sequel.connect({adapter: 'tinytds'}.merge(config[:mssql]))
+      @tds_client = TinyTds::Client.new(conf)
+      @tds_client.default_query_options({symbolize_keys: true})
+    end
+
+    def query(q)
+      r = @tds_client.execute(q)
+      r.each
+    end
+
+    def setup(conf)
     end
 
     def config
@@ -84,7 +81,5 @@ module Koromo
       return result[0] if args[:id] && result.class == Array
       result
     end
-
   end
-
 end

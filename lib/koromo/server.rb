@@ -17,15 +17,32 @@ module Koromo
     end
 
     before do
-      tokens = Config.shared.auth_tokens
       halt 401 unless (req_auth = request.env['HTTP_AUTHENTICATION'])
       halt 401 unless req_auth[0..6] == 'Bearer '
-      halt 401 unless auth_tokens.has_key?(req_auth[7..-1])
+      c = Config.shared
+      if (auth = c.auth_tokens[req_auth[7..-1]])
+        c.mssql[:username] = auth[:username]
+        c.mssql[:password] = auth[:password]
+      else
+        halt 403
+      end
+      halt 415 unless request.media_type == 'application/json'
     end
 
+    # Primary usage, accepts SQL query; submit JSON in body
+    # {"query": "SELECT * FROM table"}
     post '/query' do
+      j = parse_json(request.body)
+      sql = SQL.new(Config.shared.mssql)
+      result = sql.query(j[:query])
+      if result
+        @return_obj = result
+      else
+        @return_obj = {result: 'nil'}
+      end
     end
 
+    # Pre-configured SQL queries
     post '/preset/:name' do |name|
     end
 
@@ -65,13 +82,7 @@ module Koromo
 
     after do
       content_type 'application/json'
-      # if @jsonp_callback
-      #   content_type 'application/javascript'
-      #   body @jsonp_callback + '(' + json_with_object(@body_object) + ')'
-      # else
-      #   content_type 'application/json'
-      #   body json_with_object(@body_object, {pretty: config[:global][:pretty_json]})
-      # end
+      body json_with_object(@return_obj)
     end
   end
 end
