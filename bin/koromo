@@ -2,11 +2,12 @@
 require 'kajiki'
 require 'koromo'
 
-
 opts = Kajiki.preset_options(:server, {config: true})
 
 Kajiki.run(opts) do |cmd|
   case cmd
+  when 'config'
+  	puts IO.read(File.expand_path('../../lib/koromo/config-example.rb',__FILE__))
   when 'start'
     Koromo::Config.load_config(opts[:config]) if opts[:config]
     Koromo::Handler.autoload

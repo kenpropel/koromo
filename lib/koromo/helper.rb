@@ -2,6 +2,10 @@ require 'json'
 
 module Koromo
   module Helper
+    def parse_json(str)
+      JSON.parse(str, {symbolize_names: true})
+    end
+
     # Convert object into JSON, optionally pretty-format
     # @param obj [Object] any Ruby object
     # @param opts [Hash] any JSON options
