@@ -10,19 +10,22 @@ module Koromo
     configure do
       set :environment, :production
       disable :static
-      c = Config.shared
+      c = Koromo.config
       set :dump_errors, c.dump_errors
       set :logging, c.logging
       c.run_post_boot
     end
 
     before do
-      halt 401 unless (req_auth = request.env['HTTP_AUTHENTICATION'])
+      Koromo.logger.info 'Filter: before...'
+      halt 401 unless (req_auth = request.env['HTTP_AUTHORIZATION'])
       halt 401 unless req_auth[0..6] == 'Bearer '
-      c = Config.shared
+      c = Koromo.config
       if (auth = c.auth_tokens[req_auth[7..-1]])
         c.mssql[:username] = auth[:username]
         c.mssql[:password] = auth[:password]
+        Koromo.logger.info 'Authorization successful.'
+        Koromo.logger.debug "Auth token matched to SQL user: #{auth[:username]}"
       else
         halt 403
       end
