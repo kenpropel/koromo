@@ -2,13 +2,20 @@ require 'json'
 
 module Koromo
   module Helper
+    def parse_json(str)
+      JSON.parse(str, {symbolize_names: true})
+    rescue => e
+      Koromo.logger.warn "#{e.class.name} - #{e}"
+      halt 415
+    end
+
     # Convert object into JSON, optionally pretty-format
     # @param obj [Object] any Ruby object
     # @param opts [Hash] any JSON options
     # @return [String] JSON string
     def json_with_object(obj, pretty: nil, opts: nil)
       return '{}' if obj.nil?
-      pretty ||= Koromo.config[:global][:pretty_json]
+      pretty ||= Koromo.config.pretty_json
       if pretty
         opts = {
           indent: '  ',

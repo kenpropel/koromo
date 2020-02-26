@@ -10,68 +10,91 @@ module Koromo
     configure do
       set :environment, :production
       disable :static
-      c = Config.shared
+      c = Koromo.config
       set :dump_errors, c.dump_errors
       set :logging, c.logging
       c.run_post_boot
     end
 
     before do
-      tokens = Config.shared.auth_tokens
-      halt 401 unless (req_auth = request.env['HTTP_AUTHENTICATION'])
+      Koromo.logger.info 'Filter: before...'
+      halt 401 unless (req_auth = request.env['HTTP_AUTHORIZATION'])
       halt 401 unless req_auth[0..6] == 'Bearer '
-      halt 401 unless auth_tokens.has_key?(req_auth[7..-1])
+      c = Koromo.config
+      if (auth = c.auth_tokens[req_auth[7..-1]])
+        c.mssql[:username] = auth[:username]
+        c.mssql[:password] = auth[:password]
+        Koromo.logger.info 'Authorization successful.'
+        Koromo.logger.debug "Auth token matched to SQL user: #{auth[:username]}"
+      else
+        halt 403
+      end
+      halt 415 unless request.media_type == 'application/json'
     end
 
+    # Primary usage, accepts SQL query; submit JSON in body
+    # {"query": "SELECT * FROM table"}
     post '/query' do
+      Koromo.logger.info 'Router: incoming query request...'
+      request.body.rewind
+      j = parse_json(request.body.read)
+      halt 400 if j[:query].nil?
+      start = Time.now
+      Koromo.logger.debug "SQL query: #{j[:query]}"
+      sql = Koromo.sql(Koromo.config.mssql)
+      result = sql.query(j[:query])
+      finish = Time.now
+      json_with_object({ok: true, result: result, query_time: finish - start, result_size: result.length})
     end
 
-    post '/preset/:name' do |name|
-    end
-
-    get '/:resource' do |r|
-      result = Koromo.sql.get_resource(r, params: params)
-      if result
-        json_with_object(result)
-      else
-        fail Sinatra::NotFound
-      end
-    end
-
-    get '/:resource/:id' do |r, id|
-      fail Sinatra::NotFound if /\W/ =~ id
-      result = Koromo.sql.get_resource(r, id: id, params: params)
-      if result
-        json_with_object(result)
-      else
-        fail Sinatra::NotFound
-      end
-    end
+    # Pre-configured SQL queries
+    # post '/preset/:name' do |name|
+    # end
 
     not_found do
       json_with_object({message: 'Huh, nothing here.'})
+    end
+
+    error 400 do
+      json_with_object({message: 'Wait, what?'})
     end
 
     error 401 do
       json_with_object({message: 'Oops, need a valid auth.'})
     end
 
+    error 403 do
+      json_with_object({message: 'Nah, not for you.'})
+    end
+
+    error 415 do
+      json_with_object({message: 'Uh, right over my head.'})
+    end
+
     error do
       status 500
       err = env['sinatra.error']
-      slogger.error "#{err.class.name} - #{err}"
+      Koromo.logger.error "#{err.class.name} - #{err}"
       json_with_object({message: 'Yikes, internal error.'})
     end
 
+    error TinyTds::Error do
+      status 502
+      err = env['sinatra.error']
+      Koromo.logger.warn "#{err.class.name} - #{err}"
+      json_with_object({ok: false, error: "#{err}"})
+    end
+
+    error SQLError do
+      status 400
+      err = env['sinatra.error'].tinytds
+      Koromo.logger.warn "#{err.class.name} - #{err}"
+      json_with_object({ok: false, error: "#{err}"})
+    end
+
     after do
+      Koromo.logger.info 'Filter: after...'
       content_type 'application/json'
-      # if @jsonp_callback
-      #   content_type 'application/javascript'
-      #   body @jsonp_callback + '(' + json_with_object(@body_object) + ')'
-      # else
-      #   content_type 'application/json'
-      #   body json_with_object(@body_object, {pretty: config[:global][:pretty_json]})
-      # end
     end
   end
 end

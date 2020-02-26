@@ -30,6 +30,7 @@ module Koromo
     attr_accessor :handler_paths
     attr_accessor :dump_errors
     attr_accessor :logging
+    attr_accessor :pretty_json
 
     def initialize
       @auth_tokens = []
