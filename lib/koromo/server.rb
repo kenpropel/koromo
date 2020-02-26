@@ -35,57 +35,66 @@ module Koromo
     # Primary usage, accepts SQL query; submit JSON in body
     # {"query": "SELECT * FROM table"}
     post '/query' do
-      j = parse_json(request.body)
-      sql = SQL.new(Config.shared.mssql)
+      Koromo.logger.info 'Router: incoming query request...'
+      request.body.rewind
+      j = parse_json(request.body.read)
+      halt 400 if j[:query].nil?
+      start = Time.now
+      Koromo.logger.debug "SQL query: #{j[:query]}"
+      sql = Koromo.sql(Koromo.config.mssql)
       result = sql.query(j[:query])
-      if result
-        @return_obj = result
-      else
-        @return_obj = {result: 'nil'}
-      end
+      finish = Time.now
+      json_with_object({ok: true, result: result, query_time: finish - start, result_size: result.length})
     end
 
     # Pre-configured SQL queries
-    post '/preset/:name' do |name|
-    end
-
-    get '/:resource' do |r|
-      result = Koromo.sql.get_resource(r, params: params)
-      if result
-        json_with_object(result)
-      else
-        fail Sinatra::NotFound
-      end
-    end
-
-    get '/:resource/:id' do |r, id|
-      fail Sinatra::NotFound if /\W/ =~ id
-      result = Koromo.sql.get_resource(r, id: id, params: params)
-      if result
-        json_with_object(result)
-      else
-        fail Sinatra::NotFound
-      end
-    end
+    # post '/preset/:name' do |name|
+    # end
 
     not_found do
       json_with_object({message: 'Huh, nothing here.'})
+    end
+
+    error 400 do
+      json_with_object({message: 'Wait, what?'})
     end
 
     error 401 do
       json_with_object({message: 'Oops, need a valid auth.'})
     end
 
+    error 403 do
+      json_with_object({message: 'Nah, not for you.'})
+    end
+
+    error 415 do
+      json_with_object({message: 'Uh, right over my head.'})
+    end
+
     error do
       status 500
       err = env['sinatra.error']
-      slogger.error "#{err.class.name} - #{err}"
+      Koromo.logger.error "#{err.class.name} - #{err}"
       json_with_object({message: 'Yikes, internal error.'})
     end
 
+    error TinyTds::Error do
+      status 502
+      err = env['sinatra.error']
+      Koromo.logger.warn "#{err.class.name} - #{err}"
+      json_with_object({ok: false, error: "#{err}"})
+    end
+
+    error SQLError do
+      status 400
+      err = env['sinatra.error'].tinytds
+      Koromo.logger.warn "#{err.class.name} - #{err}"
+      json_with_object({ok: false, error: "#{err}"})
+    end
+
     after do
+      Koromo.logger.info 'Filter: after...'
       content_type 'application/json'
-      body json_with_object(@return_obj)
     end
   end
 end
