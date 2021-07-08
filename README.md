@@ -6,9 +6,9 @@ A proxy server for MS SQL Server to present as a RESTful service.
 
 ## Requirements
 
-- [Ruby](https://www.ruby-lang.org/) 2.5 <=
-- [Kajiki](https://kenjij.github.io/kajiki/) 1.1 <=
-- [Sinatra](http://www.sinatrarb.com) 2.0 <=
+- [Ruby](https://www.ruby-lang.org/) 2.7 <=
+- [Kajiki](https://kenjij.github.io/kajiki/) 1.2 <=
+- [Sinatra](http://www.sinatrarb.com) 2.1 <=
 - [TinyTDS](https://github.com/rails-sqlserver/tiny_tds)
 
 ## Getting Started
