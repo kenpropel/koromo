@@ -67,17 +67,47 @@ Koromo::Config.shared.set_post_boot do
 end
 ```
 
-### Use
+### Run
 
 ```
-$ koromo start -c config.rb
+$ koromo -c config.rb -d -l koromo.log -P koromo.pid -p 4567 start
 ```
 
-### Examples
+### Example Use
 
-Config file.
+Request via HTTP.
 
+```sh
+curl -X POST -H "Authorization: Bearer someSTRING1234" \
+ -H "Content-Type: application/json" \
+ -d '{"query": "select * from TableOne where id = 654321"}' \
+ -i http://127.0.0.1:4567/query
 ```
-$ koromo_config
-```
 
+Receive response.
+
+```json
+{
+  "ok": true,
+  "result": [
+    {
+      "id": 654321,
+      "customer": "Pizza the Hutt",
+      "updated": "2020-11-23T02:48:59Z",
+      "closed": false,
+      "type": 0,
+      "desc": null
+    }
+  ],
+  "fields": [
+    "id",
+    "customer",
+    "updated",
+    "closed",
+    "type",
+    "desc"
+  ],
+  "affected_rows": 1,
+  "query_time": 0.023742624,
+  "result_size": 1
+}```

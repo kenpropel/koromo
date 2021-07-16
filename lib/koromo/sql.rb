@@ -1,4 +1,4 @@
-require 'tiny_tds'
+ require 'tiny_tds'
 
 module Koromo
   def self.sql(conf)
@@ -35,7 +35,11 @@ module Koromo
     def query(q)
       Koromo.logger.info 'Executing SQL query...'
       r = @tds_client.execute(q)
-      r.each
+      {
+        result: r.each,
+        fields: r.fields,
+        affected_rows: r.affected_rows,
+      }
     rescue TinyTds::Error => e
       raise SQLError.new(e)
     end

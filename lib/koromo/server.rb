@@ -44,7 +44,10 @@ module Koromo
       sql = Koromo.sql(Koromo.config.mssql)
       result = sql.query(j[:query])
       finish = Time.now
-      json_with_object({ok: true, result: result, query_time: finish - start, result_size: result.length})
+      result[:ok] = true
+      result[:query_time] = finish - start
+      result[:result_size] = result[:result].length
+      json_with_object(result)
     end
 
     # Pre-configured SQL queries
